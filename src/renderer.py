@@ -27,6 +27,7 @@ from src.config import (
     WASTE_POS,
 )
 from src.entities import MagicalReceptacle, RunePebble
+from src.lore_data import CATEGORY_BY_ID
 
 
 class LayeredRenderer:
@@ -49,6 +50,10 @@ class LayeredRenderer:
 
         # Initialize static background layer
         self.bg_layer.blit(self.assets.background_surface, (0, 0))
+
+    def clear_pebble_cache(self):
+        """Clears cached pebble surfaces when loading a new chapter or re-dealing."""
+        self._pebble_render_cache.clear()
 
     def clear_dynamic_layers(self):
         self.ambient_fx_layer.fill((0, 0, 0, 0))
@@ -175,20 +180,21 @@ class LayeredRenderer:
             layer.blit(base, (x, y))
             return
 
-        # Cache static face of revealed pebble
-        cache_key = (pebble.uid, pebble.revealed, pebble.is_keystone)
+        # Cache static face of revealed pebble (keyed by full identity so chapters never collide)
+        cache_key = (pebble.uid, pebble.category_id, pebble.word, pebble.revealed, pebble.is_keystone)
         if cache_key not in self._pebble_render_cache:
             face = pygame.Surface((w, h), pygame.SRCALPHA)
             p_cfg = PALETTE[pebble.pillar]
+            cat_meta = CATEGORY_BY_ID.get(pebble.category_id, {})
 
             if pebble.is_keystone:
                 base = self.assets.get_surface(f"pebble_keystone_{pebble.pillar}")
                 face.blit(base, (0, 0))
 
-                # Draw Keystone header tag ("KEYSTONE" + symbol)
+                # Draw Keystone header tag ("KEYSTONE" + origin/pillar)
                 tag_font = self.fonts.get("ui", 10)
-                pillar_short = p_cfg["name"].upper()
-                tag_surf = tag_font.render(f"✦ {pillar_short} ✦", True, PALETTE["gold_bright"])
+                hint_short = cat_meta.get("hint_tag", p_cfg["name"]).upper()
+                tag_surf = tag_font.render(f"• {hint_short} •", True, PALETTE["gold_bright"])
                 face.blit(tag_surf, tag_surf.get_rect(center=(w // 2, 19)))
 
                 # Category Title
@@ -223,13 +229,13 @@ class LayeredRenderer:
                     base_size=15,
                     color=PALETTE["ink_dark"],
                     center_x=w // 2 + 5,
-                    center_y=h // 2 - 2,
+                    center_y=h // 2 - 3,
                     max_width=w - 48,
                 )
 
-                # Subtle pillar subtitle at bottom of tablet
+                # Specific hint_tag at bottom of tablet so players can distinguish categories clearly
                 sub_font = self.fonts.get("lore", 10)
-                sub_str = p_cfg["name"].split(" ")[-1]
+                sub_str = cat_meta.get("hint_tag", p_cfg["name"].split(" ")[-1])
                 sub_surf = sub_font.render(sub_str, True, p_cfg["stone_fill"])
                 face.blit(sub_surf, sub_surf.get_rect(center=(w // 2 + 5, h - 16)))
 
@@ -342,9 +348,11 @@ class LayeredRenderer:
                 plate_rect = pygame.Rect(px + 24, py + 28, w - 48, 46)
                 pygame.draw.rect(layer, (18, 16, 14, 125), plate_rect, border_radius=16)
 
-                # Origin & Symbol header
+                # Hint tag header matching the Word Pebble subtitle
+                cat_meta = CATEGORY_BY_ID.get(pool.category_id, {})
+                hint_tag = cat_meta.get("hint_tag", pool.keystone.origin).upper()
                 orig_font = self.fonts.get("ui", 10)
-                orig_surf = orig_font.render(pool.keystone.origin.upper(), True, p_cfg["text_accent"])
+                orig_surf = orig_font.render(f"• {hint_tag} •", True, PALETTE["gold_bright"])
                 layer.blit(orig_surf, orig_surf.get_rect(center=(px + w // 2, py + 21)))
 
                 # Category Title inside the consecrated pool

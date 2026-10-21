@@ -18,6 +18,7 @@ LORE_CATEGORIES = [
     {
         "id": "mana_spirits",
         "title": "Fa'Diel Mana Spirits",
+        "hint_tag": "Mana Spirit",
         "pillar": "pillar_element",
         "symbol": "spirit",
         "origin": "Legend of Mana",
@@ -27,6 +28,7 @@ LORE_CATEGORIES = [
     {
         "id": "mtg_five_colors",
         "title": "Five Colors of Mana",
+        "hint_tag": "Mana Color",
         "pillar": "pillar_element",
         "symbol": "flame",
         "origin": "Magic: The Gathering",
@@ -36,6 +38,7 @@ LORE_CATEGORIES = [
     {
         "id": "mtg_iconic_instants",
         "title": "90s Spellbook Classics",
+        "hint_tag": "MTG Spell",
         "pillar": "pillar_element",
         "symbol": "spark",
         "origin": "Magic: The Gathering",
@@ -45,6 +48,7 @@ LORE_CATEGORIES = [
     {
         "id": "dnd_arcane_schools",
         "title": "Schools of Arcane Magic",
+        "hint_tag": "Arcane School",
         "pillar": "pillar_element",
         "symbol": "sigil",
         "origin": "Dungeons & Dragons",
@@ -54,24 +58,27 @@ LORE_CATEGORIES = [
     {
         "id": "morrowind_magic_arts",
         "title": "Mages Guild Disciplines",
+        "hint_tag": "Guild Art",
         "pillar": "pillar_element",
         "symbol": "star",
         "origin": "TES III: Morrowind",
         "lore_note": "Mystical arts taught in the guildhalls of Vvardenfell, including Levitation and Recall.",
-        "words": ["Mysticism", "Alteration", "Destruction", "Restoration", "Alchemy", "Illusionism"],
+        "words": ["Mysticism", "Alteration", "Destruction", "Restoration", "Thaumaturgy", "Conjuring"],
     },
     {
         "id": "alchemical_reagents",
         "title": "Vvardenfell Alchemy",
+        "hint_tag": "Reagent",
         "pillar": "pillar_element",
         "symbol": "potion",
         "origin": "TES III: Morrowind",
         "lore_note": "Exotic flora and salts ground with mortar and pestle for potent elixirs.",
-        "words": ["Marshmerrow", "Wickwheat", "Frost Salts", "Void Salts", "Bittergreen", "Luminous Russula"],
+        "words": ["Marshmerrow", "Wickwheat", "Frost Salts", "Void Salts", "Moon Sugar", "Luminous Russula"],
     },
     {
         "id": "elemental_invocations",
         "title": "Archmage Invocations",
+        "hint_tag": "D&D Spell",
         "pillar": "pillar_element",
         "symbol": "flame",
         "origin": "Dungeons & Dragons",
@@ -81,11 +88,12 @@ LORE_CATEGORIES = [
     {
         "id": "celestial_omens",
         "title": "Astral & Lunar Tides",
+        "hint_tag": "Celestial",
         "pillar": "pillar_element",
         "symbol": "moon",
         "origin": "Morrowind & Fa'Diel",
         "lore_note": "Twin moons and celestial phenomena heralding prophecies and mana surges.",
-        "words": ["Masser", "Secunda", "Eclipse", "Starfall", "Sunbeam", "Aetherius"],
+        "words": ["Masser Moon", "Secunda Moon", "Solar Eclipse", "Starfall", "Sunbeam", "Aetherius"],
     },
 
     # =========================================================================
@@ -94,15 +102,17 @@ LORE_CATEGORIES = [
     {
         "id": "vvardenfell_realms",
         "title": "Vvardenfell Biomes",
+        "hint_tag": "TES3 Region",
         "pillar": "pillar_biome",
         "symbol": "mushroom",
         "origin": "TES III: Morrowind",
         "lore_note": "From giant mushroom coasts and muddy swamps to the blighted slopes of Red Mountain.",
-        "words": ["Bitter Coast", "Ashlands", "Grazelands", "Ascadian Isles", "Red Mountain", "Azura's Coast"],
+        "words": ["Bitter Coast", "Ashlands Wastes", "Grazelands", "Ascadian Isles", "Red Mountain", "Azura's Coast"],
     },
     {
         "id": "morrowind_settlements",
-        "title": "Ports & Strongholds",
+        "title": "Vvardenfell Towns",
+        "hint_tag": "TES3 Town",
         "pillar": "pillar_biome",
         "symbol": "arch",
         "origin": "TES III: Morrowind",
@@ -112,6 +122,7 @@ LORE_CATEGORIES = [
     {
         "id": "myst_linking_ages",
         "title": "Linking Book Ages",
+        "hint_tag": "Myst Age",
         "pillar": "pillar_biome",
         "symbol": "book",
         "origin": "Myst & Riven",
@@ -121,15 +132,17 @@ LORE_CATEGORIES = [
     {
         "id": "fadiel_artifacts_lands",
         "title": "Sanctums of Fa'Diel",
+        "hint_tag": "Fa'Diel Land",
         "pillar": "pillar_biome",
         "symbol": "tree",
         "origin": "Legend of Mana",
         "lore_note": "Wondrous lands restored to the world map by placing enchanted Artifacts.",
-        "words": ["Domina", "Tree of Mana", "Luon Highway", "Lumina", "Norn Peaks", "Bejeweled City"],
+        "words": ["Domina Town", "Tree of Mana", "Luon Highway", "Lumina Tower", "Norn Peaks", "Bejeweled City"],
     },
     {
         "id": "mtg_basic_taplands",
         "title": "Sacred Lands of Mana",
+        "hint_tag": "Basic Land",
         "pillar": "pillar_biome",
         "symbol": "leaf",
         "origin": "Magic: The Gathering",
@@ -138,9 +151,10 @@ LORE_CATEGORIES = [
     },
     {
         "id": "mtg_legendary_realms",
-        "title": "Planes & Sanctuaries",
+        "title": "Planes of the Multiverse",
+        "hint_tag": "MTG Plane",
         "pillar": "pillar_biome",
-        "symbol": "arch",
+        "symbol": "portal",
         "origin": "Magic: The Gathering",
         "lore_note": "Storied planes and fabled academies from the Weatherlight and Urza sagas.",
         "words": ["Dominaria", "Tolaria", "Serra's Realm", "Phyrexia", "Shandalar", "Rath"],
@@ -148,20 +162,22 @@ LORE_CATEGORIES = [
     {
         "id": "dwemer_and_ancient_ruins",
         "title": "Forgotten Sanctuaries",
+        "hint_tag": "Ancient Ruin",
         "pillar": "pillar_biome",
         "symbol": "ruin",
         "origin": "90s RPG Lore",
         "lore_note": "Subterranean brass citadels, sunken D'ni caverns, and moss-grown elven arches.",
-        "words": ["Arkngthand", "D'ni Cavern", "Underdark", "Mind's Eye", "Bonechill Ruins", "Sunken Fane"],
+        "words": ["Arkngthand", "D'ni Cavern", "Underdark", "Dagoth Ur Citadel", "Bonechill Ruins", "Sunken Fane"],
     },
     {
         "id": "dnd_planes_of_existence",
         "title": "Great Wheel Cosmology",
+        "hint_tag": "Outer Plane",
         "pillar": "pillar_biome",
         "symbol": "portal",
         "origin": "Dungeons & Dragons",
         "lore_note": "Outer and Inner planes traversed via Sigil, the City of Doors.",
-        "words": ["Sigil", "Feywild", "Astral Plane", "Ethereal Plane", "Shadowfell", "Elemental Chaos"],
+        "words": ["Sigil City", "Feywild", "Astral Plane", "Ethereal Plane", "Shadowfell", "Elemental Chaos"],
     },
 
     # =========================================================================
@@ -170,6 +186,7 @@ LORE_CATEGORIES = [
     {
         "id": "dnd_martial_classes",
         "title": "Vanguard Classes",
+        "hint_tag": "Martial Class",
         "pillar": "pillar_class",
         "symbol": "sword",
         "origin": "Dungeons & Dragons",
@@ -178,7 +195,8 @@ LORE_CATEGORIES = [
     },
     {
         "id": "dnd_mystic_classes",
-        "title": "Spellcaster & Rogue Arts",
+        "title": "Caster & Rogue Classes",
+        "hint_tag": "Caster Class",
         "pillar": "pillar_class",
         "symbol": "staff",
         "origin": "Dungeons & Dragons",
@@ -187,16 +205,18 @@ LORE_CATEGORIES = [
     },
     {
         "id": "morrowind_factions",
-        "title": "Houses & Guilds of Resdayn",
+        "title": "Great Houses & Guilds",
+        "hint_tag": "TES3 Faction",
         "pillar": "pillar_class",
         "symbol": "crest",
         "origin": "TES III: Morrowind",
         "lore_note": "Ancient Dunmer Great Houses and clandestine orders vying for influence.",
-        "words": ["House Telvanni", "House Redoran", "House Hlaalu", "Morag Tong", "Ashlanders", "The Blades"],
+        "words": ["House Telvanni", "House Redoran", "House Hlaalu", "Morag Tong", "Fighters Guild", "The Blades"],
     },
     {
         "id": "dnd_classic_monsters",
         "title": "Dungeon Denizens",
+        "hint_tag": "D&D Monster",
         "pillar": "pillar_class",
         "symbol": "eye",
         "origin": "Dungeons & Dragons",
@@ -206,6 +226,7 @@ LORE_CATEGORIES = [
     {
         "id": "mtg_vintage_relics",
         "title": "Urza's & Vintage Relics",
+        "hint_tag": "MTG Artifact",
         "pillar": "pillar_class",
         "symbol": "gem",
         "origin": "Magic: The Gathering",
@@ -215,6 +236,7 @@ LORE_CATEGORIES = [
     {
         "id": "dnd_wondrous_items",
         "title": "Wondrous D&D Treasure",
+        "hint_tag": "D&D Relic",
         "pillar": "pillar_class",
         "symbol": "chalice",
         "origin": "Dungeons & Dragons",
@@ -224,6 +246,7 @@ LORE_CATEGORIES = [
     {
         "id": "tabletop_rpg_lexicon",
         "title": "Tabletop Guild Lexicon",
+        "hint_tag": "RPG Rule",
         "pillar": "pillar_class",
         "symbol": "dice",
         "origin": "AD&D & 90s CRPGs",
@@ -233,11 +256,12 @@ LORE_CATEGORIES = [
     {
         "id": "fadiel_craft_materials",
         "title": "Watts' Forge Materials",
+        "hint_tag": "Forge Ore",
         "pillar": "pillar_class",
         "symbol": "anvil",
         "origin": "Legend of Mana",
         "lore_note": "Rare metals, scales, and woods tempered into masterwork blades and instruments.",
-        "words": ["Lorimar Iron", "Dragon Scales", "Dior Wood", "Orihalcon", "Altena Alloy", "Swallowtail"],
+        "words": ["Lorimar Iron", "Dragon Scales", "Dior Wood", "Orihalcon", "Altena Alloy", "Menos Bronze"],
     },
 ]
 
@@ -245,6 +269,8 @@ CATEGORY_BY_ID = {cat["id"]: cat for cat in LORE_CATEGORIES}
 
 
 # Curated Journey Chapters (Levels)
+# Balanced so each chapter mixes distinct origins (Legend of Mana, Morrowind, Myst, MTG, D&D)
+# and provides sufficient Sacred Pools and Mana Turns for strategic play.
 JOURNEY_CHAPTERS = [
     {
         "level": 1,
@@ -253,7 +279,7 @@ JOURNEY_CHAPTERS = [
         "num_receptacles": 3,
         "num_columns": 5,
         "words_per_category": 4,
-        "max_turns": 48,
+        "max_turns": 68,
         "categories": [
             "mana_spirits",
             "mtg_basic_taplands",
@@ -265,32 +291,32 @@ JOURNEY_CHAPTERS = [
     {
         "level": 2,
         "title": "II. Mist Over Seyda Neen",
-        "subtitle": "Cross the ash-swept waters of Vvardenfell and decipher the Linking Books.",
-        "num_receptacles": 3,
+        "subtitle": "Cross the waters of Vvardenfell, decipher Myst's Ages, and gather D&D relics.",
+        "num_receptacles": 4,
         "num_columns": 5,
         "words_per_category": 4,
-        "max_turns": 56,
+        "max_turns": 84,
         "categories": [
-            "vvardenfell_realms",
             "morrowind_settlements",
             "myst_linking_ages",
             "morrowind_factions",
             "alchemical_reagents",
+            "dnd_wondrous_items",
             "celestial_omens",
         ],
     },
     {
         "level": 3,
         "title": "III. The Archmage's Sanctum",
-        "subtitle": "Balance three Receptacles across seven ancient traditions of spell and relic.",
-        "num_receptacles": 3,
+        "subtitle": "Master four Sacred Pools across seven ancient traditions of spell and relic.",
+        "num_receptacles": 4,
         "num_columns": 6,
         "words_per_category": 4,
-        "max_turns": 68,
+        "max_turns": 98,
         "categories": [
             "dnd_arcane_schools",
             "mtg_vintage_relics",
-            "dnd_wondrous_items",
+            "vvardenfell_realms",
             "mtg_legendary_realms",
             "dnd_mystic_classes",
             "elemental_invocations",
@@ -300,11 +326,11 @@ JOURNEY_CHAPTERS = [
     {
         "level": 4,
         "title": "IV. Echoes of the Multiverse",
-        "subtitle": "Four Sacred Pools open as deeper ruins and dungeon denizens emerge.",
+        "subtitle": "Deeper ruins, forge ores, and classic dungeon denizens emerge from the mist.",
         "num_receptacles": 4,
         "num_columns": 6,
         "words_per_category": 5,
-        "max_turns": 82,
+        "max_turns": 115,
         "categories": [
             "mana_spirits",
             "vvardenfell_realms",
@@ -318,11 +344,11 @@ JOURNEY_CHAPTERS = [
     {
         "level": 5,
         "title": "V. Grand Grimoire of the 90s",
-        "subtitle": "A masterwork trial of eight nostalgic realms and only three Receptacles.",
-        "num_receptacles": 3,
+        "subtitle": "A masterwork trial of eight nostalgic realms across four Sacred Pools.",
+        "num_receptacles": 4,
         "num_columns": 6,
         "words_per_category": 5,
-        "max_turns": 95,
+        "max_turns": 130,
         "categories": [
             "morrowind_magic_arts",
             "morrowind_settlements",
@@ -356,7 +382,7 @@ def build_procedural_chapter(seed=None, difficulty="standard"):
         words_per_cat = 4
         receptacles = 4
         columns = 5
-        turns = 70
+        turns = 88
     else:
         picked = (
             rng.sample(elements, 3)
@@ -364,9 +390,9 @@ def build_procedural_chapter(seed=None, difficulty="standard"):
             + rng.sample(classes, 2)
         )
         words_per_cat = 4
-        receptacles = 3
+        receptacles = 4
         columns = 6
-        turns = 74
+        turns = 98
 
     rng.shuffle(picked)
     return {
@@ -379,4 +405,3 @@ def build_procedural_chapter(seed=None, difficulty="standard"):
         "max_turns": turns,
         "categories": [c["id"] for c in picked],
     }
-

@@ -1,6 +1,7 @@
 """
 Automated verification tests for Echoes of Fa'Diel: A Mana Associations Journey.
-Tests asset management, layered surface rendering, and Solitaire Associations puzzle logic.
+Tests asset management, layered surface rendering, cross-level cache invalidation,
+Wave-Stratified deal balance, and Solitaire Associations puzzle logic.
 """
 
 import os
@@ -16,6 +17,7 @@ from src.assets_manager import AssetManager, FontManager
 from src.config import SCREEN_HEIGHT, SCREEN_WIDTH, TEMPLATES_DIR
 from src.entities import RunePebble
 from src.game_scene import GameScene
+from src.lore_data import JOURNEY_CHAPTERS
 from src.renderer import LayeredRenderer
 
 
@@ -58,12 +60,51 @@ class TestManaMatchingGame(unittest.TestCase):
         self.assertEqual(self.renderer.drag_and_fx_layer.get_size(), (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.assertEqual(self.renderer.hud_layer.get_size(), (SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    def test_solitaire_associations_mechanics(self):
+    def test_level_transition_clears_pebble_cache_and_matches_categories(self):
+        """
+        Verifies that transitioning from Level 1 to Level 2 clears the pebble surface
+        cache and that all stones dealt in every chapter strictly match that chapter's categories.
+        """
+        scene = GameScene(self.assets, self.fonts, self.renderer)
+        # Reveal all stones in Level 1 and render so _pebble_render_cache is populated
+        for col in scene.tableau:
+            for p in col:
+                p.reveal()
+        scene.render(self.screen)
+        self.assertGreater(len(self.renderer._pebble_render_cache), 0)
+
+        # Now load Level 2 (index 1)
+        scene.load_chapter(1)
+        self.assertEqual(len(self.renderer._pebble_render_cache), 0)
+
+        # Verify all capítulos (Levels 1..5) have 100% matching Keystones and Words
+        for ch_idx in range(len(JOURNEY_CHAPTERS)):
+            scene.load_chapter(ch_idx)
+            expected_cats = set(JOURNEY_CHAPTERS[ch_idx]["categories"])
+            words_per_cat = JOURNEY_CHAPTERS[ch_idx]["words_per_category"]
+
+            all_stones = list(scene.stock) + list(scene.waste)
+            for col in scene.tableau:
+                all_stones.extend(col)
+
+            keystones = [p for p in all_stones if p.is_keystone]
+            words = [p for p in all_stones if not p.is_keystone]
+
+            self.assertEqual({k.category_id for k in keystones}, expected_cats)
+            self.assertEqual({w.category_id for w in words}, expected_cats)
+            self.assertEqual(len(keystones), len(expected_cats))
+            self.assertEqual(len(words), len(expected_cats) * words_per_cat)
+
+            # Verify Wave 1 Keystones are present on the revealed Tableau tips at start
+            revealed_tips = [col[-1] for col in scene.tableau if col]
+            tip_keystones = [p for p in revealed_tips if p.is_keystone]
+            self.assertGreaterEqual(len(tip_keystones), 2)
+
+    def test_solitaire_associations_mechanics_and_cairn_harmonization(self):
         scene = GameScene(self.assets, self.fonts, self.renderer)
         pool = scene.receptacles[0]
         self.assertTrue(pool.is_empty)
 
-        # Create a test category keystone and 3 matching word pebbles, plus 1 non-matching word pebble
         keystone = RunePebble(
             uid=900,
             category_id="mana_spirits",
@@ -121,6 +162,21 @@ class TestManaMatchingGame(unittest.TestCase):
         # 8. Test that a column cluster cannot stack onto its own column
         self.assertFalse(scene.can_stack_on_column([other_w], 2))
         self.assertFalse(scene.try_auto_channel(("tableau", 2), [other_w]))
+
+        # 9. Test direct Cairn Harmonization when Keystone + all required words combine on a Tableau column
+        k_myst = RunePebble(910, "myst_linking_ages", "Linking Book Ages", "pillar_biome", "book", "Myst", "Linking Book Ages", True, 2, True)
+        m1 = RunePebble(911, "myst_linking_ages", "Linking Book Ages", "pillar_biome", "book", "Myst", "Channelwood", False, 2, True)
+        m2 = RunePebble(912, "myst_linking_ages", "Linking Book Ages", "pillar_biome", "book", "Myst", "Riven", False, 2, True)
+        scene.tableau[0] = [k_myst]
+        scene.tableau[1] = [m1]
+        scene.tableau[2] = [m2]
+        self.assertTrue(scene.execute_move_to_column(("tableau", 1), [m1], 0))
+        # Keystone should remain at the visible tip of column 0
+        self.assertTrue(scene.tableau[0][-1].is_keystone)
+        # Moving final word m2 onto column 0 should automatically harmonize the cluster on the Cairn!
+        self.assertTrue(scene.execute_move_to_column(("tableau", 2), [m2], 0))
+        self.assertEqual(len(scene.tableau[0]), 0)
+        self.assertEqual(scene.harmonized_categories[-1]["id"], "myst_linking_ages")
 
 
 if __name__ == "__main__":

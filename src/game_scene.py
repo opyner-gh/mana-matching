@@ -128,6 +128,7 @@ class GameScene:
             self.chapter_cfg = JOURNEY_CHAPTERS[self.current_chapter_idx]
 
         self.active_modal = None
+        self.renderer.clear_pebble_cache()
         self.undo_stack.clear()
         self.selected_source = None
         self.selected_cluster = []
@@ -201,38 +202,95 @@ class GameScene:
         for c in range(num_cols):
             self.cairn_positions.append((start_cx + c * TABLEAU_SPACING_X, TABLEAU_AREA_Y))
 
-        # Fair Deal Distribution:
-        # Ensure at least 2 Keystones start immediately accessible (on top of Tableau Cairns
-        # or near the top of the Mana Spring), and distribute the rest across upper/mid tableau & stock.
-        random.shuffle(keystones)
-        random.shuffle(word_pebbles)
+        # Wave-Stratified Fair Deal Distribution:
+        # Split categories into Wave 1 (fits in the available Sacred Pools) and Wave 2.
+        # Wave 1 Keystones & Words populate the revealed tips, shallow veiled layer, and
+        # top of the Mana Spring (drawn first), while Wave 2 Keystones & Words populate
+        # the deeper veiled layer and lower Mana Spring (uncovered as Wave 1 harmonizes).
+        wave1_cat_ids = set(cat_ids[:num_pools])
 
-        immediate_keystones = keystones[:2]
-        other_stones = keystones[2:] + word_pebbles
-        random.shuffle(other_stones)
+        w1_keystones = [k for k in keystones if k.category_id in wave1_cat_ids]
+        w1_words = [w for w in word_pebbles if w.category_id in wave1_cat_ids]
+        w2_keystones = [k for k in keystones if k.category_id not in wave1_cat_ids]
+        w2_words = [w for w in word_pebbles if w.category_id not in wave1_cat_ids]
 
-        # Column depths (e.g. 3 to 4 stones per column)
+        random.shuffle(w1_keystones)
+        random.shuffle(w1_words)
+        random.shuffle(w2_keystones)
+        random.shuffle(w2_words)
+
+        # Column depths (3 to 4 stones per column -> 2 to 3 veiled stones + 1 revealed tip)
         col_depths = [3 + (c % 2) for c in range(num_cols)]
+        total_veiled_slots = sum(d - 1 for d in col_depths)
+
+        # Guaranteed Wave 1 Keystones on revealed Tableau tips (2 to 3 Keystones immediately visible)
+        num_tip_keystones = min(len(w1_keystones), max(2, num_pools - 1))
+        tip_keystones = w1_keystones[:num_tip_keystones]
+        remaining_w1_keystones = w1_keystones[num_tip_keystones:]
+
+        # Fill the rest of the revealed Tableau tips with Wave 1 Word Pebbles
+        num_tip_words = max(0, num_cols - len(tip_keystones))
+        tip_words = [w1_words.pop() for _ in range(min(num_tip_words, len(w1_words)))]
+        top_tips = tip_keystones + tip_words
+        random.shuffle(top_tips)
+
+        # Build pool of Wave 2 stones (for deepest veiled slots & bottom of Mana Spring)
+        # Put Wave 2 words deepest, and Wave 2 keystones slightly above them so Keystones emerge early in Wave 2
+        w2_pool = w2_words + w2_keystones
+        # Build pool of remaining Wave 1 stones (for shallow veiled slots & top of Mana Spring)
+        w1_pool = w1_words + remaining_w1_keystones
+        random.shuffle(w1_pool)
+        # Ensure any remaining Wave 1 Keystones are near the top of w1_pool
+        w1_pool.sort(key=lambda p: 1 if p.is_keystone else 0)
+
+        # Fill veiled slots column by column from deepest (d=0) to shallowest (d=depth-2)
+        # Deepest slots get Wave 2 stones first; shallowest slots get Wave 1 stones
+        deep_stones = []
+        shallow_stones = []
+        num_deep_slots = sum(max(0, d - 2) for d in col_depths)
+        num_shallow_slots = num_cols  # 1 shallow veiled stone right under each tip
+
+        for _ in range(num_deep_slots):
+            if w2_pool:
+                deep_stones.append(w2_pool.pop(0))
+            elif w1_pool:
+                deep_stones.append(w1_pool.pop(0))
+
+        for _ in range(num_shallow_slots):
+            if w1_pool:
+                shallow_stones.append(w1_pool.pop(0))
+            elif w2_pool:
+                shallow_stones.append(w2_pool.pop(0))
+
+        random.shuffle(deep_stones)
+        random.shuffle(shallow_stones)
+
         for c in range(num_cols):
             depth = col_depths[c]
-            for d in range(depth - 1):
-                if other_stones:
-                    p = other_stones.pop()
+            # Deepest veiled stones (d = 0 .. depth - 3)
+            for _ in range(max(0, depth - 2)):
+                if deep_stones:
+                    p = deep_stones.pop()
                     p.revealed = False
                     self.tableau[c].append(p)
-
-        # Place the immediate keystones on top of 2 random columns, and fill remaining column tips
-        top_candidates = immediate_keystones + [other_stones.pop() for _ in range(max(0, num_cols - len(immediate_keystones))) if other_stones]
-        random.shuffle(top_candidates)
-        for c in range(num_cols):
-            if top_candidates:
-                tip = top_candidates.pop()
+            # Shallow veiled stone right below the tip (d = depth - 2)
+            if shallow_stones:
+                p = shallow_stones.pop()
+                p.revealed = False
+                self.tableau[c].append(p)
+            # Revealed tip (d = depth - 1)
+            if top_tips:
+                tip = top_tips.pop()
                 tip.revealed = True
                 self.tableau[c].append(tip)
 
-        # Remaining stones go into the Mana Spring (Stock)
-        self.stock = top_candidates + other_stones
-        random.shuffle(self.stock)
+        # Remaining stones go into the Mana Spring (Stock).
+        # Note: self.stock.pop() draws from the END of self.stock first!
+        # So we place Wave 2 stones at the beginning (drawn later) and Wave 1 stones at the end (drawn first).
+        random.shuffle(w2_pool)
+        # Within Wave 2 stock, bias Keystones toward the upper part of Wave 2
+        w2_pool.sort(key=lambda p: 1 if p.is_keystone else 0)
+        self.stock = deep_stones + shallow_stones + w2_pool + w1_pool
         for p in self.stock:
             p.revealed = False
             p.set_pos(STOCK_POS[0], STOCK_POS[1], instant=True)
@@ -444,15 +502,32 @@ class GameScene:
         for p in cluster:
             self.tableau[target_col_idx].append(p)
 
+        # Keep any Keystone Rune in the active cluster at the visible tip of the column
+        new_cluster = self.get_movable_cluster_at_column(target_col_idx)
+        if len(new_cluster) > 1 and any(p.is_keystone for p in new_cluster):
+            col = self.tableau[target_col_idx]
+            prefix = col[: len(col) - len(new_cluster)]
+            ordered_cluster = [p for p in new_cluster if not p.is_keystone] + [p for p in new_cluster if p.is_keystone]
+            self.tableau[target_col_idx] = prefix + ordered_cluster
+            new_cluster = ordered_cluster
+
         self._consume_turn()
         self._sync_target_positions()
 
         tip_rect = self.tableau[target_col_idx][-1].get_rect()
         p_cfg = PALETTE[cluster[0].pillar]
+
+        # If a Tableau cluster has assembled its Keystone Rune + all required Word Pebbles, Harmonize it directly!
+        keystones_in_cl = [p for p in new_cluster if p.is_keystone]
+        words_in_cl = [p for p in new_cluster if not p.is_keystone]
+        if keystones_in_cl and len(words_in_cl) >= keystones_in_cl[0].required_count:
+            self._harmonize_tableau_cluster(target_col_idx, keystones_in_cl[0], words_in_cl, tip_rect)
+            self._check_end_conditions()
+            return True
+
         if not target_was_empty:
             self.ripples.append(WaterRipple(tip_rect.centerx, tip_rect.centery, p_cfg["glow"], max_radius=54.0))
             self._spawn_particle_burst(tip_rect.centerx, tip_rect.centery, p_cfg["glow"], count=12)
-            new_cluster = self.get_movable_cluster_at_column(target_col_idx)
             self.whisper_text = (
                 f"Resonant Lore Match! Bound {len(new_cluster)} runes of '{cluster[0].category_title}'."
             )
@@ -463,6 +538,48 @@ class GameScene:
 
         self._check_end_conditions()
         return True
+
+    def _harmonize_tableau_cluster(self, col_idx: int, keystone: RunePebble, word_pebbles: list[RunePebble], rect: pygame.Rect):
+        """Harmonizes a completed Keystone + Words cluster assembled directly on a Tableau Cairn."""
+        cat_id = keystone.category_id
+        cat_info = CATEGORY_BY_ID[cat_id]
+        p_cfg = PALETTE[keystone.pillar]
+
+        uids = {keystone.uid} | {p.uid for p in word_pebbles}
+        self.tableau[col_idx] = [p for p in self.tableau[col_idx] if p.uid not in uids]
+        if self.tableau[col_idx] and not self.tableau[col_idx][-1].revealed:
+            self.tableau[col_idx][-1].reveal()
+        self._sync_target_positions()
+
+        self.harmonized_categories.append({
+            "id": cat_id,
+            "title": cat_info["title"],
+            "origin": cat_info["origin"],
+            "pillar": cat_info["pillar"],
+            "words": [p.word for p in word_pebbles],
+            "lore_note": cat_info["lore_note"],
+        })
+
+        for r_delay in (65.0, 92.0, 118.0):
+            self.ripples.append(WaterRipple(rect.centerx, rect.centery, PALETTE["gold_bright"], max_radius=r_delay, duration=1.1))
+        self._spawn_particle_burst(rect.centerx, rect.centery, PALETTE["gold_bright"], count=38)
+        self._spawn_particle_burst(rect.centerx, rect.centery, p_cfg["glow"], count=24)
+
+        bonus_msg = ""
+        if not self.relaxed_mode:
+            self.turns_remaining += 5
+            bonus_msg = " (+5 Mana Turns)"
+
+        self.banners.append(
+            FloatingBanner(
+                f"• {cat_info['title']} Harmonized!{bonus_msg} •",
+                rect.centerx,
+                rect.centery - 10,
+                PALETTE["gold_bright"],
+            )
+        )
+        self.whisper_text = f"• {cat_info['title']} Harmonized directly on the Cairn!{bonus_msg}"
+        self.whisper_color = PALETTE["gold_bright"]
 
     def _harmonize_pool(self, pool: MagicalReceptacle):
         """Completes a category pool, logs it in the Grimoire, grants bonus mana turns, and frees the pool."""
@@ -487,18 +604,18 @@ class GameScene:
 
         bonus_msg = ""
         if not self.relaxed_mode:
-            self.turns_remaining += 4
-            bonus_msg = " (+4 Mana Turns)"
+            self.turns_remaining += 5
+            bonus_msg = " (+5 Mana Turns)"
 
         self.banners.append(
             FloatingBanner(
-                f"✦ {cat_info['title']} Harmonized!{bonus_msg} ✦",
+                f"• {cat_info['title']} Harmonized!{bonus_msg} •",
                 pr.centerx,
                 pr.centery - 10,
                 PALETTE["gold_bright"],
             )
         )
-        self.whisper_text = f"✦ {cat_info['title']} Harmonized! Sacred Pool freed for a new Keystone Rune!{bonus_msg}"
+        self.whisper_text = f"• {cat_info['title']} Harmonized! Sacred Pool freed for a new Keystone Rune!{bonus_msg}"
         self.whisper_color = PALETTE["gold_bright"]
 
         # Empty the pool so a new Keystone Rune can consecrate it!
@@ -507,7 +624,7 @@ class GameScene:
         pool.harmonize_flash = 1.0
 
     def draw_from_mana_spring(self):
-        """Draws a veiled stone from the Mana Spring into the Divination Basin, or recycles Waste."""
+        """Draws a veiled stone from the Mana Spring into the Divination Basin, or recycles Waste (free)."""
         if self.stock:
             self._save_undo_snapshot()
             pebble = self.stock.pop()
@@ -516,20 +633,21 @@ class GameScene:
             self._consume_turn()
             self._sync_target_positions()
             self.ripples.append(WaterRipple(STOCK_POS[0] + PEBBLE_WIDTH // 2, STOCK_POS[1] + PEBBLE_HEIGHT // 2, PALETTE["mana_cyan"], 52.0))
-            self.whisper_text = f"Drawn from Mana Spring: '{pebble.word}' ({PALETTE[pebble.pillar]['name']})."
+            cat_meta = CATEGORY_BY_ID.get(pebble.category_id, {})
+            hint_tag = cat_meta.get("hint_tag", PALETTE[pebble.pillar]["name"])
+            self.whisper_text = f"Drawn from Mana Spring: '{pebble.word}' ({hint_tag})."
             self.whisper_color = PALETTE["mana_glow"]
             self._check_end_conditions()
         elif self.waste:
             self._save_undo_snapshot()
-            # Recycle waste back into stock in order
+            # Recycle waste back into stock in order (free action — does not cost a Mana Turn)
             while self.waste:
                 p = self.waste.pop()
                 p.revealed = False
                 self.stock.append(p)
-            self._consume_turn()
             self._sync_target_positions()
             self.ripples.append(WaterRipple(STOCK_POS[0] + PEBBLE_WIDTH // 2, STOCK_POS[1] + PEBBLE_HEIGHT // 2, PALETTE["mana_glow"], 68.0))
-            self.whisper_text = "Re-channeled the Divination Basin back into the Mana Spring."
+            self.whisper_text = "Re-channeled the Divination Basin back into the Mana Spring (Free Action)."
             self.whisper_color = PALETTE["mana_glow"]
             self._check_end_conditions()
         else:
@@ -1233,12 +1351,12 @@ class GameScene:
         # Procedural Weaver button
         proc_rect = pygame.Rect(panel.left + 48, panel.top + 82 + len(JOURNEY_CHAPTERS) * 68, (panel.width - 112) // 2, 46)
         close_rect = pygame.Rect(panel.centerx + 8, panel.top + 82 + len(JOURNEY_CHAPTERS) * 68, (panel.width - 112) // 2, 46)
-        self.modal_buttons.append(UIButton("procedural", "✦ Weave Random Nostalgic Realm ✦", proc_rect, PALETTE["mana_cyan"]))
+        self.modal_buttons.append(UIButton("procedural", "• Weave Random Nostalgic Realm •", proc_rect, PALETTE["mana_cyan"]))
         self.modal_buttons.append(UIButton("close_modal", "Resume Current Journey", close_rect))
 
     def _render_endgame_modal(self, layer: pygame.Surface, panel: pygame.Rect):
         is_win = self.active_modal == "victory"
-        heading = "✦ All Sacred Pools Harmonized! ✦" if is_win else "The Mana Stream Has Ebbed..."
+        heading = "~ All Sacred Pools Harmonized! ~" if is_win else "The Mana Stream Has Ebbed..."
         h_col = PALETTE["gold_bright"] if is_win else (255, 150, 130)
 
         title = self.fonts.render_text_with_shadow("title", 30, heading, h_col)
@@ -1255,7 +1373,7 @@ class GameScene:
         # List harmonized categories
         y_cursor = panel.top + 144
         for h in self.harmonized_categories[:6]:
-            line = f"✦ {h['title']} ({h['origin']}): {', '.join(h['words'])}"
+            line = f"• {h['title']} ({h['origin']}): {', '.join(h['words'])}"
             l_surf = self.fonts.get("lore", 14).render(line, True, PALETTE["mana_glow"])
             layer.blit(l_surf, l_surf.get_rect(center=(panel.centerx, y_cursor)))
             y_cursor += 28
